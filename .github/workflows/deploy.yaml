@@ -79,8 +79,8 @@ jobs:
             echo "${{ secrets.GIT_REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
-            docker run -d --name fc-final-container --restart unless-stopped --log-driver=syslog -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod ${{ env.REGISTRY }}/fastcampus-final-group2/finalproject_map_server:${{ env.IMAGE_TAG }}
-                        docker run -d \
+            docker pull ${{ env.REGISTRY }}/fastcampus-final-group2/finalproject_map_server:${{ env.IMAGE_TAG }}
+            docker run -d \
               --name fc-final-container \
               --restart unless-stopped \
               --log-driver=syslog \
