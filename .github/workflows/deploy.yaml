@@ -78,6 +78,6 @@ jobs:
           script: |
             docker stop $(docker ps -a -q)
             docker rm $(docker ps -a -q)
-            docker pull ${{ env.REGISTRY }}/fastcampus-final-group2/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            docker run -d --name fc-final-container --restart unless-stopped --log-driver=syslog -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod ${{ env.REGISTRY }}/fastcampus-final-group2/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            docker pull ${{ env.REGISTRY }}/fastcampus-final-group2/finalproject_map_server:${{ env.IMAGE_TAG }}
+            docker run -d --name fc-final-container --restart unless-stopped --log-driver=syslog -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod ${{ env.REGISTRY }}/fastcampus-final-group2/finalproject_map_server:${{ env.IMAGE_TAG }}
             docker image prune -a -f
