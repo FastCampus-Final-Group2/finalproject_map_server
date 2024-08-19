@@ -29,6 +29,11 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // 경로 최적화 라이브러리
+    implementation 'com.graphhopper:graphhopper-core:9.1'
+    implementation 'com.graphhopper:graphhopper-reader-osm:3.0-pre3'
+    implementation 'com.graphhopper:jsprit-core:1.8'
 }
 
 tasks.named('test') {

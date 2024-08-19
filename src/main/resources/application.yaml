@@ -1,0 +1,6 @@
+osm:
+  file:
+    path: ${OSM_FILE_PATH}
+graph:
+  cache:
+    path: ${OSM_CACHE_PATH}
