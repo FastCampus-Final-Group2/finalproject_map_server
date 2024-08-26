@@ -1,20 +1,22 @@
 package com.team2.finalprojectmapserver.model.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
 public record OptimizationRequest (
-    LocalDateTime startTime,
+    @NotNull LocalDateTime startTime,
     Stopover startStopover,
     List<Stopover> stopoverList
 ){
 
     public record Stopover(
-        String address,
-        Double lat,
-        Double lon,
-        LocalTime delayTime
+        @NotBlank String address,
+        @NotNull Double lat,
+        @NotNull Double lon,
+        @NotNull LocalTime delayTime
     ){
 
     }
