@@ -25,6 +25,7 @@ import com.team2.finalprojectmapserver.model.request.OptimizationRequest.Stopove
 import com.team2.finalprojectmapserver.model.response.OptimizationResponse;
 import com.team2.finalprojectmapserver.model.response.OptimizationResponse.ResultStopover;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class OptimizationService {
                 }
             }
 
-            OptimizationResponse optimumPath = operationOptimalPath(addressListMap, resultPoints, request.startTime());
+            OptimizationResponse optimumPath = operationOptimalPath(addressListMap, resultPoints, request.startTime(),request.startStopover().delayTime());
 
             optimizationResponseList.add(optimumPath);
         }
@@ -144,11 +145,14 @@ public class OptimizationService {
         return new MatrixResult(distanceMatrix, timeMatrix);
     }
 
-    private OptimizationResponse operationOptimalPath(Map<GHPoint, LinkedList<Stopover>> addressListMap,List<GHPoint> viaPoints ,LocalDateTime startTime){
+    private OptimizationResponse operationOptimalPath(Map<GHPoint, LinkedList<Stopover>> addressListMap,List<GHPoint> viaPoints ,LocalDateTime startTime, LocalTime startStopoverDelayTime){
         List<ResultStopover> resultStopoverList = new ArrayList<>();
         Stopover startStopover = addressListMap.get(viaPoints.get(0)).getFirst();
 
-        LocalDateTime currentTime = startTime;  // 경유지마다의 도착 시간을 추적하는 변수
+
+        LocalDateTime currentTime = startTime.plusHours(startStopoverDelayTime.getHour())
+            .plusMinutes(startStopoverDelayTime.getMinute())
+            .plusSeconds(startStopoverDelayTime.getSecond());  // 경유지마다의 도착 시간을 추적하는 변수
 
         for (int i = 0; i < viaPoints.size() - 1; i++) {
             GHRequest request = new GHRequest()
@@ -244,7 +248,7 @@ public class OptimizationService {
             addressListMap.computeIfAbsent(point, k -> new LinkedList<>()).add(stopover);
         }
 
-        OptimizationResponse optimumPath = operationOptimalPath(addressListMap, viaPoints, request.startTime());
+        OptimizationResponse optimumPath = operationOptimalPath(addressListMap, viaPoints, request.startTime(),request.startStopover().delayTime());
         return optimumPath;
     }
 }
