@@ -10,7 +10,9 @@ import java.util.List;
 public record OptimizationRequest (
     @NotNull LocalDateTime startTime,
     @Valid Stopover startStopover,
-    @Valid List<Stopover> stopoverList
+    @Valid List<Stopover> stopoverList,
+    LocalTime restStartTime,
+    LocalTime restDuration
 ){
 
     public record Stopover(

@@ -72,7 +72,7 @@ public class OptimizationService {
                 }
             }
 
-            OptimizationResponse optimumPath = operationOptimalPath(addressListMap, resultPoints, request.startTime(),request.startStopover().delayTime());
+            OptimizationResponse optimumPath = operationOptimalPath(addressListMap, resultPoints, request.startTime(),request.startStopover().delayTime(),request.restStartTime(),request.restDuration());
 
             optimizationResponseList.add(optimumPath);
         }
@@ -145,9 +145,38 @@ public class OptimizationService {
         return new MatrixResult(distanceMatrix, timeMatrix);
     }
 
-    private OptimizationResponse operationOptimalPath(Map<GHPoint, LinkedList<Stopover>> addressListMap,List<GHPoint> viaPoints ,LocalDateTime startTime, LocalTime startStopoverDelayTime){
+    public OptimizationResponse getOptimumPath(OptimizationRequest request) {
+        Stopover startStopover = request.startStopover();
+        GHPoint startPoint = new GHPoint(startStopover.lat(), startStopover.lon());
+        List<GHPoint> viaPoints = new ArrayList<>();
+        viaPoints.add(startPoint);
+
+        Map<GHPoint, LinkedList<Stopover>> addressListMap = new HashMap<>();
+        addressListMap.put(startPoint, new LinkedList<>(List.of(startStopover)));
+
+        for (Stopover stopover : request.stopoverList()) {
+            GHPoint point = new GHPoint(stopover.lat(), stopover.lon());
+            viaPoints.add(point);
+
+            // 동일한 키가 없다면 map에 추가  동일한 키가 있다면 해당 리스트에 추가후 map에 저장
+            addressListMap.computeIfAbsent(point, k -> new LinkedList<>()).add(stopover);
+        }
+
+        OptimizationResponse optimumPath = operationOptimalPath(addressListMap, viaPoints, request.startTime(),request.startStopover().delayTime(),request.restStartTime(),request.restDuration());
+        return optimumPath;
+    }
+
+    private OptimizationResponse operationOptimalPath(Map<GHPoint, LinkedList<Stopover>> addressListMap,List<GHPoint> viaPoints ,LocalDateTime startTime, LocalTime startStopoverDelayTime,LocalTime breakStartTime, // 추가된 매개변수: 휴식 시작 시간
+        LocalTime breakDuration){
         List<ResultStopover> resultStopoverList = new ArrayList<>();
         Stopover startStopover = addressListMap.get(viaPoints.get(0)).getFirst();
+
+        if (breakStartTime == null){
+            breakStartTime = LocalTime.of(0, 0, 0);
+        }
+        if (breakDuration == null){
+            breakDuration = LocalTime.of(0, 0, 0);
+        }
 
 
         LocalDateTime currentTime = startTime.plusHours(startStopoverDelayTime.getHour())
@@ -202,6 +231,43 @@ public class OptimizationService {
             }
         }
 
+        boolean plusTrue = false;
+        int restingPosition = 0;
+        for (int i = 0; i < resultStopoverList.size()-1; i++) {
+            LocalDateTime stopoverDepartureTime = resultStopoverList.get(i).getStartTime();
+            LocalDateTime stopoverEndTime = resultStopoverList.get(i).getEndTime();
+            LocalDateTime nextStopoverDepartureTime = resultStopoverList.get(i+1).getStartTime();
+            LocalDateTime nextStopoverEndTime = resultStopoverList.get(i+1).getEndTime();
+
+            if (plusTrue){
+                resultStopoverList.get(i+1).setStartTime(nextStopoverDepartureTime.plusSeconds(breakDuration.toSecondOfDay()));
+                resultStopoverList.get(i+1).setEndTime(nextStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+            }
+            // 출발시간과 도착시간사이
+            if (stopoverDepartureTime.toLocalTime().isBefore(breakStartTime) && stopoverEndTime.toLocalTime().isAfter(breakStartTime)){
+                plusTrue = true;
+                restingPosition =  i+1;
+                resultStopoverList.get(i).setEndTime(stopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+                resultStopoverList.get(i+1).setStartTime(nextStopoverDepartureTime.plusSeconds(breakDuration.toSecondOfDay()));
+                resultStopoverList.get(i+1).setEndTime(nextStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+            }
+
+                // 작업 도중인경우
+            if (stopoverEndTime.toLocalTime().isBefore(breakStartTime) && resultStopoverList.get(i+1).getStartTime().toLocalTime().isAfter(breakStartTime)){
+                plusTrue = true;
+                restingPosition =  i+2;
+                resultStopoverList.get(i+1).setEndTime(nextStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+            }
+        }
+        // 마지막경유지 시간 추가
+        LocalDateTime beforeStopoverDepartureTime = resultStopoverList.get(resultStopoverList.size()-2).getStartTime();
+        LocalDateTime beforeStopoverEndTime = resultStopoverList.get(resultStopoverList.size()-2).getEndTime();
+        resultStopoverList.get(resultStopoverList.size()-1).setStartTime(beforeStopoverDepartureTime.plusSeconds(breakDuration.toSecondOfDay()));
+        resultStopoverList.get(resultStopoverList.size()-1).setEndTime(beforeStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+
+
+
+
         // 전체 경로 요청
         GHRequest finalRequest = new GHRequest()
             .setProfile("truck") // 트럭 프로필 사용
@@ -228,27 +294,7 @@ public class OptimizationService {
             coordinates.add(coordinate);
         }
 
-        return OptimizationResponse.of(totalDistance, totalTime,startTime,startStopover, resultStopoverList, coordinates);
+        return OptimizationResponse.of(totalDistance, totalTime,startTime,startStopover, resultStopoverList, coordinates,breakStartTime,breakStartTime.plusSeconds(breakDuration.toSecondOfDay()),restingPosition);
     }
 
-    public OptimizationResponse getOptimumPath(OptimizationRequest request) {
-        Stopover startStopover = request.startStopover();
-        GHPoint startPoint = new GHPoint(startStopover.lat(), startStopover.lon());
-        List<GHPoint> viaPoints = new ArrayList<>();
-        viaPoints.add(startPoint);
-
-        Map<GHPoint, LinkedList<Stopover>> addressListMap = new HashMap<>();
-        addressListMap.put(startPoint, new LinkedList<>(List.of(startStopover)));
-
-        for (Stopover stopover : request.stopoverList()) {
-            GHPoint point = new GHPoint(stopover.lat(), stopover.lon());
-            viaPoints.add(point);
-
-            // 동일한 키가 없다면 map에 추가  동일한 키가 있다면 해당 리스트에 추가후 map에 저장
-            addressListMap.computeIfAbsent(point, k -> new LinkedList<>()).add(stopover);
-        }
-
-        OptimizationResponse optimumPath = operationOptimalPath(addressListMap, viaPoints, request.startTime(),request.startStopover().delayTime());
-        return optimumPath;
-    }
 }
