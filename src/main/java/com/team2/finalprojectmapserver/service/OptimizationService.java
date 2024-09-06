@@ -233,6 +233,7 @@ public class OptimizationService {
 
         boolean plusTrue = false;
         int restingPosition = 0;
+        LocalTime resultBreakStartTime = breakStartTime;
         for (int i = 0; i < resultStopoverList.size()-1; i++) {
             LocalDateTime stopoverDepartureTime = resultStopoverList.get(i).getStartTime();
             LocalDateTime stopoverEndTime = resultStopoverList.get(i).getEndTime();
@@ -257,8 +258,10 @@ public class OptimizationService {
                 plusTrue = true;
                 restingPosition =  i+2;
                 resultStopoverList.get(i+1).setEndTime(nextStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+                resultBreakStartTime = resultStopoverList.get(i+1).getStartTime().toLocalTime();
             }
         }
+
         // 마지막경유지 시간 추가
         LocalDateTime beforeStopoverDepartureTime = resultStopoverList.get(resultStopoverList.size()-2).getStartTime();
         LocalDateTime beforeStopoverEndTime = resultStopoverList.get(resultStopoverList.size()-2).getEndTime();
@@ -294,7 +297,7 @@ public class OptimizationService {
             coordinates.add(coordinate);
         }
 
-        return OptimizationResponse.of(totalDistance, totalTime,startTime,startStopover, resultStopoverList, coordinates,breakStartTime,breakStartTime.plusSeconds(breakDuration.toSecondOfDay()),restingPosition);
+        return OptimizationResponse.of(totalDistance, totalTime,startTime,startStopover, resultStopoverList, coordinates,resultBreakStartTime,resultBreakStartTime.plusSeconds(breakDuration.toSecondOfDay()),restingPosition);
     }
 
 }
