@@ -263,10 +263,10 @@ public class OptimizationService {
         }
 
         // 마지막경유지 시간 추가
-        LocalDateTime beforeStopoverDepartureTime = resultStopoverList.get(resultStopoverList.size()-2).getStartTime();
-        LocalDateTime beforeStopoverEndTime = resultStopoverList.get(resultStopoverList.size()-2).getEndTime();
-        resultStopoverList.get(resultStopoverList.size()-1).setStartTime(beforeStopoverDepartureTime.plusSeconds(breakDuration.toSecondOfDay()));
-        resultStopoverList.get(resultStopoverList.size()-1).setEndTime(beforeStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
+//        LocalDateTime beforeStopoverDepartureTime = resultStopoverList.get(resultStopoverList.size()-2).getStartTime();
+//        LocalDateTime beforeStopoverEndTime = resultStopoverList.get(resultStopoverList.size()-2).getEndTime();
+//        resultStopoverList.get(resultStopoverList.size()-1).setStartTime(beforeStopoverDepartureTime.plusSeconds(breakDuration.toSecondOfDay()));
+//        resultStopoverList.get(resultStopoverList.size()-1).setEndTime(beforeStopoverEndTime.plusSeconds(breakDuration.toSecondOfDay()));
 
 
 
